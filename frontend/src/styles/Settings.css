@@ -1,0 +1,416 @@
+.settings {
+  display: flex;
+  flex-direction: column;
+  /* Same reasoning as .about in About.css: flex:1 from .about-overlay > .settings
+     gives this the overlay's full height, so centering its own children here
+     centers the whole card group vertically in whatever space is available,
+     while overflow-y:auto (same selector) still scrolls normally if the
+     content is taller than that space. */
+  justify-content: center;
+  gap: 12px;
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+  color: var(--text);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 0 12px;
+  text-align: center;
+}
+
+.settings-header__icon {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.settings-header__title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.settings-toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--r);
+  font-size: 13px;
+  border: 1px solid var(--border);
+}
+
+.settings-toast--ok  { background: color-mix(in srgb, var(--green)  10%, var(--bg-card)); color: var(--green); }
+.settings-toast--err { background: color-mix(in srgb, var(--red)    10%, var(--bg-card)); color: var(--red); }
+
+.settings-card {
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.settings-card__hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.settings-card__hint code {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--gray-bg);
+  border: 1px solid var(--gray-border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--text);
+}
+
+.settings-theme-toggle {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+
+.settings-theme-option {
+  min-width: 0;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--r) - 1px);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background .16s ease,
+    border-color .16s ease,
+    color .16s ease,
+    box-shadow .16s ease,
+    transform .16s ease;
+}
+
+.settings-theme-option svg {
+  flex: 0 0 auto;
+}
+
+.settings-theme-option span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-theme-option:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.settings-theme-option:active {
+  transform: scale(0.985);
+}
+
+.settings-theme-option:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent, #f0a030) 70%, transparent);
+  outline-offset: 2px;
+}
+
+.settings-theme-option--active {
+  background: var(--bg-card);
+  border-color: var(--border-md);
+  color: var(--text);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+}
+
+.settings-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  line-height: 1.1;
+  white-space: nowrap;
+  transition:
+    background .16s ease,
+    border-color .16s ease,
+    box-shadow .16s ease,
+    transform .16s ease;
+  will-change: transform;
+}
+
+.settings-btn svg {
+  flex: 0 0 auto;
+}
+
+.settings-btn span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-hover, var(--border));
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+  transform: translateY(-1px);
+}
+
+.settings-btn:active:not(:disabled) {
+  box-shadow: none;
+  transform: translateY(0) scale(0.985);
+}
+
+.settings-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent, #f0a030) 70%, transparent);
+  outline-offset: 2px;
+}
+
+.settings-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.settings-btn--danger {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 30%, var(--border));
+}
+
+.settings-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--red) 8%, var(--bg));
+}
+
+.settings-capabilities {
+  list-style: none;
+  display: grid;
+  gap: 0;
+  margin: 2px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+
+.settings-capabilities li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 9px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.settings-capabilities li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settings-capabilities svg {
+  margin-top: 1px;
+  color: var(--text-dim);
+}
+
+.settings-capabilities strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.settings-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.settings-info-cell {
+  background: var(--bg);
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.settings-info-cell__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.settings-info-cell__value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.settings-about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--accent, #f0a030);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  margin-top: 4px;
+}
+
+.settings-about-link:hover {
+  opacity: 0.8;
+}
+
+/* ── Toggle switch ── */
+.settings-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  border: none;
+  padding: 0;
+  background: var(--border-md, var(--border));
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .2s ease;
+}
+
+.settings-toggle--on {
+  background: var(--accent);
+}
+
+.settings-toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  transition: transform .2s ease;
+}
+
+.settings-toggle--on::after {
+  transform: translateX(16px);
+}
+
+/* ── Toggle row ── */
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.settings-toggle-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.settings-toggle-row__label {
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* ── Toggle section (sub-group inside Interface card) ── */
+.settings-toggle-section {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.settings-toggle-section__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg);
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-toggle-section .settings-toggle-row {
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.settings-toggle-section .settings-toggle-row:last-child {
+  border-bottom: none;
+}
+
+/* ── 2-column actions ── */
+.settings-actions--2col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* ── 3-column actions ── */
+.settings-actions--3col {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 720px) {
+  .settings {
+    max-width: 100%;
+  }
+  .settings-card {
+    padding: 14px 16px;
+  }
+  .settings-actions {
+    grid-template-columns: 1fr;
+  }
+  .settings-info-grid {
+    grid-template-columns: 1fr;
+  }
+}

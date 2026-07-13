@@ -1,0 +1,152 @@
+.boot-splash {
+  --boot-logo-size: 86px;
+  --boot-gap: 18px;
+  --boot-title-width: 342px;
+  --boot-initial-shift: calc((var(--boot-title-width) + var(--boot-gap)) / 2);
+  --boot-title-color: #ffffff;
+  --boot-title-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+  --boot-bg:
+    radial-gradient(circle at 22% 18%, rgba(78, 86, 116, 0.34), transparent 30%),
+    linear-gradient(135deg, #34384b 0%, #202331 36%, #10121a 72%, #05060a 100%);
+  --boot-sheen:
+    linear-gradient(90deg, rgba(68, 76, 108, 0.22), transparent 38%, rgba(7, 8, 13, 0.22)),
+    repeating-linear-gradient(115deg, rgba(92, 101, 135, 0.06) 0 1px, transparent 1px 15px);
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--boot-title-color);
+  background: var(--boot-bg);
+  animation: boot-splash-out 0.58s ease 3.02s forwards;
+}
+
+.boot-splash--light {
+  --boot-title-color: #8a6b32;
+  --boot-title-shadow: 0 10px 28px rgba(255, 255, 255, 0.68), 0 2px 10px rgba(190, 158, 98, 0.18);
+  --boot-bg:
+    radial-gradient(circle at 72% 18%, rgba(255, 255, 255, 0.95), transparent 30%),
+    linear-gradient(135deg, #ffffff 0%, #fbfaf6 36%, #f2eee4 72%, #e5dccb 100%);
+  --boot-sheen:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.54), transparent 42%, rgba(221, 204, 170, 0.18)),
+    repeating-linear-gradient(115deg, rgba(210, 190, 150, 0.055) 0 1px, transparent 1px 15px);
+}
+
+.boot-splash--dark {
+  --boot-title-color: #ffffff;
+  --boot-title-shadow: 0 10px 28px rgba(0, 0, 0, 0.46);
+  --boot-bg:
+    radial-gradient(circle at 22% 18%, rgba(78, 86, 116, 0.34), transparent 30%),
+    linear-gradient(135deg, #34384b 0%, #202331 36%, #10121a 72%, #05060a 100%);
+  --boot-sheen:
+    linear-gradient(90deg, rgba(68, 76, 108, 0.22), transparent 38%, rgba(7, 8, 13, 0.22)),
+    repeating-linear-gradient(115deg, rgba(92, 101, 135, 0.06) 0 1px, transparent 1px 15px);
+}
+
+.boot-splash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--boot-sheen);
+  opacity: 0.9;
+}
+
+.boot-splash__stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--boot-gap);
+  width: calc(var(--boot-logo-size) + var(--boot-gap) + var(--boot-title-width));
+  max-width: calc(100vw - 44px);
+  height: 132px;
+  transform: translateX(var(--boot-initial-shift));
+  animation: boot-stage-settle 1.08s cubic-bezier(.22, 1, .36, 1) 0.92s forwards;
+}
+
+.boot-splash__logo {
+  width: var(--boot-logo-size);
+  height: var(--boot-logo-size);
+  border-radius: 22px;
+  filter: drop-shadow(0 22px 26px rgba(7, 8, 13, 0.34));
+  flex-shrink: 0;
+  transform: scale(0.72) rotate(-8deg);
+  animation: boot-logo-in 0.92s cubic-bezier(.2, 1.15, .35, 1) forwards;
+}
+
+.boot-splash__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: var(--boot-title-width);
+  min-width: 0;
+  height: 60px;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--boot-title-color);
+  text-shadow: var(--boot-title-shadow);
+  overflow: visible;
+}
+
+.boot-splash__word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateX(42px);
+  animation: boot-word-in 0.56s cubic-bezier(.2, 1, .36, 1) forwards;
+  animation-delay: calc(1.34s + (var(--i) * 0.24s));
+}
+
+@keyframes boot-logo-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.58) rotate(-8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes boot-stage-settle {
+  0% {
+    transform: translateX(var(--boot-initial-shift));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes boot-word-in {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes boot-splash-out {
+  to {
+    opacity: 0;
+    transform: scale(1.015);
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .boot-splash {
+    --boot-logo-size: 68px;
+    --boot-gap: 12px;
+    --boot-title-width: 252px;
+  }
+
+  .boot-splash__logo {
+    border-radius: 18px;
+  }
+
+  .boot-splash__title {
+    font-size: 20px;
+  }
+}

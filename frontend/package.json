@@ -1,0 +1,26 @@
+{
+  "name": "svg-designer",
+  "private": true,
+  "version": "0.1.0",
+  "build": "R130726",
+  "ibuild": "R080726",
+  "updated": "13 Luglio 2026",
+  "description": "SVG Designer desktop app — based on nex framework",
+  "author": "Copyright © 2026 vlT di Veronesi Lorenzo",
+  "license": "SEE LICENSE IN ../LICENSE",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-icons": "5.7.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "6.0.3",
+    "vite": "8.1.3"
+  }
+}

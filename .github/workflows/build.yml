@@ -1,0 +1,220 @@
+name: Build
+
+# Fires on version tags and can also be run manually from the Actions tab.
+# build.go is cgo-based (native WebKit bindings per OS), so
+# it cannot cross-compile from a single host — this mirrors that constraint
+# with one native runner per target OS/arch, exactly like building locally
+# would require one machine per platform.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION_FILE: go.mod
+
+jobs:
+  # macOS host: builds darwin/amd64 + darwin/arm64 natively, and windows/amd64
+  # as a mingw-w64 cross build (build.go always adds windows/amd64 as a target
+  # when the host is darwin — see buildTargets() in build.go). This job is the
+  # single canonical source for the windows/amd64 artifact.
+  darwin:
+    name: darwin (amd64 + arm64) + windows/amd64
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ${{ env.GO_VERSION_FILE }}
+          cache: false
+
+      # "lts/*" always resolves to the current active Node LTS rather than a
+      # number pinned in this file going stale — the frontend tracks very
+      # recent releases (React 19, Vite 8) that bump their minimum Node
+      # requirement often, so an old hardcoded version would eventually break
+      # `npm install`/`vite build` in CI without this file being touched.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+
+      - name: Install mingw-w64 (Windows cross target)
+        run: brew install mingw-w64
+
+      - name: Provide WebView2 EventToken header for mingw
+        run: |
+          mkdir -p .github/ci-headers
+          printf '#ifndef _EVENTTOKEN_H_\n#define _EVENTTOKEN_H_\ntypedef struct EventRegistrationToken { __int64 value; } EventRegistrationToken;\n#endif\n' > .github/ci-headers/EventToken.h
+          echo "CPATH=$PWD/.github/ci-headers${CPATH:+:$CPATH}" >> "$GITHUB_ENV"
+
+      - name: Build (darwin amd64/arm64 + windows amd64)
+        run: go run build.go release
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build-darwin-amd64
+          path: release/*/darwin-amd64
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build-darwin-arm64
+          path: release/*/darwin-arm64
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build-windows-amd64
+          path: release/*/windows-amd64
+          if-no-files-found: error
+
+  # Linux amd64 host: builds linux/amd64 natively. windows/amd64 is also
+  # produced here as a side effect (build.go requires it to succeed on any
+  # linux host), but is intentionally NOT uploaded — the darwin job above is
+  # the single source of truth for that artifact, to avoid duplicate/ambiguous
+  # windows-amd64 uploads in the same run.
+  #
+  # Pinned to ubuntu-22.04 (not ubuntu-latest): Ubuntu 24.04 dropped the
+  # libwebkit2gtk-4.0-dev package in favor of 4.1-only, but build.go checks
+  # specifically for pkg-config module "webkit2gtk-4.0" and must not be
+  # modified (framework file). Revisit if/when build.go is updated for 4.1.
+  linux-amd64:
+    name: linux/amd64
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ${{ env.GO_VERSION_FILE }}
+          cache: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+
+      - name: Install native + cross (mingw-w64) build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libgtk-3-dev libwebkit2gtk-4.0-dev libglib2.0-dev \
+            gcc-mingw-w64 g++-mingw-w64 \
+            imagemagick
+
+      - name: Provide WebView2 EventToken header for mingw
+        run: |
+          mkdir -p .github/ci-headers
+          printf '#ifndef _EVENTTOKEN_H_\n#define _EVENTTOKEN_H_\ntypedef struct EventRegistrationToken { __int64 value; } EventRegistrationToken;\n#endif\n' > .github/ci-headers/EventToken.h
+          echo "CPATH=$PWD/.github/ci-headers${CPATH:+:$CPATH}" >> "$GITHUB_ENV"
+
+      - name: Build (linux amd64 + windows amd64 side effect)
+        run: go run build.go release
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build-linux-amd64
+          path: release/*/linux-amd64
+          if-no-files-found: error
+
+  # Linux arm64 host (GitHub-hosted arm64 runner): builds linux/arm64
+  # natively, same reasoning as linux-amd64 above (windows/amd64 side effect
+  # discarded here too). Native arm64 runners are free for public repos; on a
+  # private repo this requires a paid plan/self-hosted runner — drop this job
+  # if that's not available yet.
+  linux-arm64:
+    name: linux/arm64
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ${{ env.GO_VERSION_FILE }}
+          cache: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+
+      - name: Install native + cross (mingw-w64) build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libgtk-3-dev libwebkit2gtk-4.0-dev libglib2.0-dev \
+            gcc-mingw-w64 g++-mingw-w64 \
+            imagemagick
+
+      - name: Provide WebView2 EventToken header for mingw
+        run: |
+          mkdir -p .github/ci-headers
+          printf '#ifndef _EVENTTOKEN_H_\n#define _EVENTTOKEN_H_\ntypedef struct EventRegistrationToken { __int64 value; } EventRegistrationToken;\n#endif\n' > .github/ci-headers/EventToken.h
+          echo "CPATH=$PWD/.github/ci-headers${CPATH:+:$CPATH}" >> "$GITHUB_ENV"
+
+      - name: Build (linux arm64 + windows amd64 side effect)
+        run: go run build.go release
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build-linux-arm64
+          path: release/*/linux-arm64
+          if-no-files-found: error
+
+  # Only on a version tag push: bundle every platform artifact into a zip and
+  # publish a GitHub Release. Manual runs stop at the build jobs above — their
+  # output is only the workflow's own artifacts (90-day retention, downloadable
+  # from the Actions run).
+  #
+  # Tag format is mandatory: v<AppVersion>-<AppBuild>, e.g. v0.1.0-R130726 —
+  # the build number is part of the identifier, not just semver. This
+  # mirrors exactly how build.go itself names its own local release folder
+  # (`releaseName := appVersion + "-" + appBuild` in build.go), so the git
+  # tag, the GitHub Release name, and the local `release/<...>/` folder all
+  # refer to the same build with the same string.
+  publish-release:
+    name: Publish GitHub Release
+    needs: [darwin, linux-amd64, linux-arm64]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Validate tag format (v<version>-<build>, e.g. v0.1.0-R130726)
+        run: |
+          tag="${{ github.ref_name }}"
+          if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-R[0-9]{6}$ ]]; then
+            echo "::error::Tag '$tag' does not match the required format v<AppVersion>-<AppBuild>, e.g. v0.1.0-R130726 (must match version.go's AppVersion/AppBuild)."
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: Restore executable bits before zipping
+        run: |
+          find artifacts -path "*/Contents/MacOS/*" -type f -exec chmod 755 {} \;
+          find artifacts -path "*/bin/dev.vlt.svg-designer" -type f -exec chmod 755 {} \;
+
+      - name: Zip each platform artifact
+        run: |
+          cd artifacts
+          for dir in */; do
+            name="${dir%/}"
+            zip -r "../${name}.zip" "$name"
+          done
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ github.ref_name }}
+          files: "*.zip"
+          generate_release_notes: true

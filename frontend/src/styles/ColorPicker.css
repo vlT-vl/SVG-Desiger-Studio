@@ -1,0 +1,187 @@
+/* ── Wrapper ── */
+.cpicker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Swatch button — circle ── */
+.cpicker-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-md, var(--border));
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: border-color .14s, box-shadow .14s, transform .14s;
+}
+
+.cpicker-swatch:hover {
+  border-color: var(--text-muted);
+  transform: scale(1.1);
+}
+
+.cpicker-swatch--open {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+/* Checker pattern when no color at cursor */
+.cpicker-swatch--empty {
+  background: repeating-conic-gradient(#707680 0% 25%, #8f949c 0% 50%) !important;
+  background-size: 6px 6px !important;
+  opacity: 0.45;
+}
+
+/* ── Label — slide-fade da sinistra su hover, resta aperta quando picker è open ── */
+.cpicker-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  margin-left: 0;
+  pointer-events: none;
+  transform: translateX(-6px);
+  transition:
+    max-width   .2s ease,
+    opacity     .2s ease,
+    margin-left .2s ease,
+    transform   .2s ease;
+}
+
+.cpicker:hover .cpicker-label,
+.cpicker--open .cpicker-label {
+  max-width: 72px;
+  opacity: 1;
+  margin-left: 6px;
+  transform: translateX(0);
+}
+
+/* ── Popover ── */
+.cpicker-pop {
+  position: fixed;
+  z-index: 200;
+  width: 210px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-md, var(--border));
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
+  user-select: none;
+}
+
+/* ── Saturation / brightness square ── */
+.cpicker-sq {
+  position: relative;
+  width: 100%;
+  height: 148px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: crosshair;
+  flex-shrink: 0;
+}
+
+/* White-to-transparent overlay (left→right = 0→full saturation) */
+.cpicker-sq-white {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, #fff, transparent);
+}
+
+/* Transparent-to-black overlay (top→bottom = full→zero brightness) */
+.cpicker-sq-black {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent, #000);
+}
+
+/* Draggable cursor circle */
+.cpicker-sq-cur {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* ── Hue strip ── */
+.cpicker-hue {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  cursor: ew-resize;
+  flex-shrink: 0;
+  background: linear-gradient(
+    to right,
+    hsl(0,   100%, 50%),
+    hsl(30,  100%, 50%),
+    hsl(60,  100%, 50%),
+    hsl(90,  100%, 50%),
+    hsl(120, 100%, 50%),
+    hsl(150, 100%, 50%),
+    hsl(180, 100%, 50%),
+    hsl(210, 100%, 50%),
+    hsl(240, 100%, 50%),
+    hsl(270, 100%, 50%),
+    hsl(300, 100%, 50%),
+    hsl(330, 100%, 50%),
+    hsl(360, 100%, 50%)
+  );
+}
+
+/* Hue cursor */
+.cpicker-hue-cur {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* ── Hex row ── */
+.cpicker-hex {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cpicker-hex-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.cpicker-hex-inp {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 0 8px;
+  outline: none;
+  transition: border-color .14s;
+}
+
+.cpicker-hex-inp:focus {
+  border-color: var(--accent);
+}

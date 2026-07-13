@@ -1,0 +1,393 @@
+.output-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.output-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Code output ── */
+.output-code-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.output-code-wrap {
+  flex: 1;
+  overflow: auto;
+  /* Same background as the source editor (index.css --bg-editor) — the React
+     / React Native code output is read-only source code too, so it gets the
+     same contrast treatment against the light theme instead of the near-
+     white default --bg. */
+  background: var(--bg-editor, var(--bg));
+}
+
+.output-code {
+  margin: 0;
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text-dim);
+  background: transparent;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.output-code code {
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* ── Syntax colors — theme-adaptive via CSS vars from index.css ── */
+.output-code .hl-k  { color: var(--hl-k); }
+.output-code .hl-s  { color: var(--hl-s); }
+.output-code .hl-f  { color: var(--hl-f); }
+.output-code .hl-t  { color: var(--hl-t); }
+.output-code .hl-tc { color: var(--hl-tc); }
+.output-code .hl-a  { color: var(--hl-a); }
+.output-code .hl-n  { color: var(--hl-n); }
+.output-code .hl-c  { color: var(--hl-c); font-style: italic; }
+.output-code .hl-b  { color: var(--hl-b); }
+.output-code .hl-p  { color: var(--hl-p); }
+
+.output-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+
+/* ── Shared command footer ── */
+.output-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+  flex-shrink: 0;
+  min-height: 46px;
+  overflow-x: auto;
+}
+
+/* ── Action buttons ── */
+.output-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .14s, color .14s, transform .14s;
+  user-select: none;
+}
+
+.output-action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.output-action-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.output-action-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+
+.output-action-btn--err {
+  border-color: var(--red, #e05252);
+  color: var(--red, #e05252);
+}
+
+/* ── PNG output ── */
+.output-png-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.output-png-canvas {
+  flex: 1;
+  min-height: 0;
+  background-color: #7d838c;
+  background-image: repeating-conic-gradient(#707680 0% 25%, #8f949c 0% 50%);
+  background-size: 18px 18px;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+
+.output-png-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: center center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Center crosshair guides — same visual as Preview.css's, duplicated here
+   since this canvas has its own stylesheet (mirrors .preview-canvas the same
+   way .output-png-canvas already does structurally). Siblings of
+   .output-png-inner, so they mark the CANVAS's own center and stay fixed on
+   screen regardless of the rendered PNG's own pan/zoom. Fixed saturated cyan
+   (not mix-blend-mode: difference, which read as barely visible in practice)
+   — see Preview.css for the full reasoning, kept in sync with it. ── */
+.preview-guide-h,
+.preview-guide-v {
+  position: absolute;
+  pointer-events: none;
+  z-index: 4;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.7));
+}
+
+.preview-guide-h {
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1.5px dashed #00d9ff;
+}
+
+.preview-guide-v {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 1.5px dashed #00d9ff;
+}
+
+.output-png-img {
+  display: block;
+  transition: opacity .12s ease;
+}
+
+/* Shown from the instant a re-render is scheduled (scheme/scale/base-size/
+   svgCode change) until the freshly rasterized PNG lands — immediate visual
+   feedback that the click "did something", instead of the old image just
+   sitting there unchanged for the debounce + rasterization window. */
+.output-png-img--stale {
+  opacity: 0.4;
+}
+
+.output-zoom-group,
+.output-scale-group,
+.output-basesize-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.output-format-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.output-icon-btn,
+.output-pct-btn,
+.output-format-btn,
+.output-scale-btn,
+.output-basesize-btn {
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: background .14s, color .14s;
+}
+
+.output-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  padding: 0;
+}
+
+/* ── Scheme switch — small sliding toggle, not a button pair ──
+   Deliberately NOT var(--accent) (orange, the app's own brand/UI-theme
+   color) — this toggle forces the *SVG's* light/dark rendering, a totally
+   separate concept, and reads better as an actual day/night pair: a pale
+   sky/cream tone for light, a deep navy/charcoal tone for dark. Fixed hex
+   values on purpose (not theme-derived), so the switch looks the same "light
+   track = light, dark track = dark" regardless of the app's own UI theme. */
+.output-scheme-switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+  border: 1px solid #a9c2de;
+  padding: 0;
+  background: #dce7f5;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .18s ease, border-color .18s ease, filter .12s ease;
+}
+
+.output-scheme-switch:hover {
+  filter: brightness(0.96);
+}
+
+.output-scheme-switch--dark {
+  background: #1c2333;
+  border-color: #384158;
+}
+
+.output-scheme-switch__knob {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fffaf0;
+  border: 1px solid #e8d9b5;
+  color: #d97706;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  transition: transform .2s cubic-bezier(.4,0,.2,1), background .18s ease, color .18s ease, border-color .18s ease;
+}
+
+.output-scheme-switch--dark .output-scheme-switch__knob {
+  transform: translateX(16px);
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.output-pct-btn {
+  min-width: 44px;
+  padding: 0 8px;
+}
+
+.output-scale-btn {
+  min-width: 34px;
+  padding: 0 8px;
+}
+
+.output-basesize-btn {
+  min-width: 44px;
+  padding: 0 8px;
+}
+
+.output-format-btn {
+  padding: 0 12px;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.output-icon-btn:hover,
+.output-pct-btn:hover,
+.output-format-btn:hover,
+.output-scale-btn:hover,
+.output-basesize-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.output-format-btn--active,
+.output-scale-btn--active,
+.output-basesize-btn--active,
+.output-icon-btn--active {
+  background: var(--bg-card);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Data URI ── */
+.output-datauri-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding: 14px;
+  background: var(--bg);
+}
+
+.output-datauri-ta {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 10px 12px;
+  outline: none;
+  overflow: auto;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+/* ── Error — centered over the whole canvas, not a plain block of text tucked
+   in the top-left corner, so a failed PNG render is immediately obvious and
+   its message actually readable against the checkerboard. ── */
+.output-error {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  pointer-events: none;
+}
+
+.output-error__box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 340px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--red, #f87171) 40%, var(--border));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.output-error__box svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--red, #f87171);
+}

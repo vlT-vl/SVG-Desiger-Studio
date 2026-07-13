@@ -1,0 +1,339 @@
+@font-face {
+  font-family: "NexCentury";
+  src: url("/CenturyGothic.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+.about {
+  display: flex;
+  flex-direction: column;
+  /* .about-overlay > .about gives this flex:1 (fills the overlay's full
+     height) — centering its own children here means the whole card group
+     sits centered in whatever vertical space is available, while
+     overflow-y:auto (same selector) still lets it scroll normally from the
+     top if the content is taller than that space. Horizontal centering
+     (max-width + margin:auto below) is unaffected. */
+  justify-content: center;
+  gap: 14px;
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+  color: var(--text);
+}
+
+.about-hero {
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 32px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.about-hero__icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.about-hero__icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.about-hero__name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.about-hero__desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.about-hero__badge {
+  display: inline-block;
+  background: var(--gray-bg);
+  border: 1px solid var(--gray-border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+.about-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  width: 100%;
+  margin-top: 18px;
+}
+
+.about-info-cell {
+  background: var(--bg);
+  padding: 12px 10px;
+  text-align: center;
+  min-width: 0;
+}
+
+.about-info-cell__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.about-info-cell__value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.about-info-cell__value--ok {
+  color: var(--green);
+}
+
+.about-info-cell__value--err {
+  color: var(--red);
+}
+
+.about-card {
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 20px 24px;
+}
+
+.about-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text);
+}
+
+.about-legal {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-legal li {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  padding-left: 16px;
+  position: relative;
+}
+
+.about-legal li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.about-footer {
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+
+.about-footer__logo {
+  margin-bottom: 4px;
+}
+
+.about-footer__copy {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.about-footer__sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.about-info-cell--link {
+  cursor: pointer;
+  transition: background .15s;
+}
+.about-info-cell--link:hover {
+  background: var(--bg-hover);
+}
+.about-info-cell__value--link {
+  color: var(--text);
+}
+
+.emd-panel--wide {
+  width: 760px;
+}
+
+.about-license-pre {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.about-nex-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 0 22px;
+}
+
+.about-nex-logo {
+  --nex-logo-cube-w: 40px;
+  --nex-logo-cube-h: 34px;
+  --nex-logo-word-size: 34px;
+  --nex-logo-word-line: 34px;
+  --nex-logo-word-y: -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: var(--text);
+}
+
+.about-nex-logo .nex-logo-cube {
+  display: block;
+  width: var(--nex-logo-cube-w);
+  height: var(--nex-logo-cube-h);
+  transform: translateY(1px);
+}
+
+.about-nex-logo .nex-logo-word {
+  display: block;
+  color: var(--text);
+  font-family: "Century Gothic nex", var(--font);
+  font-size: var(--nex-logo-word-size);
+  font-weight: 400;
+  line-height: var(--nex-logo-word-line);
+  transform: translateY(var(--nex-logo-word-y));
+}
+
+.about-nex-grid,
+.about-nex-stack {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.about-nex-grid > div,
+.about-nex-stack > div {
+  min-width: 0;
+  background: var(--bg);
+  padding: 12px 10px;
+}
+
+.about-nex-grid span,
+.about-nex-stack span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.about-nex-grid strong,
+.about-nex-stack code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.about-nex-stack {
+  margin-top: 12px;
+}
+
+.about-nex-notice {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.about-nex-notice-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: var(--accent, #f0a030);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.about-nex-notice-link:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 720px) {
+  .about {
+    max-width: 100%;
+  }
+
+  .about-hero {
+    padding: 24px 16px 18px;
+  }
+
+  .about-info-grid,
+  .about-nex-grid,
+  .about-nex-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .about-card,
+  .about-footer {
+    padding: 16px;
+  }
+
+  .emd-panel--wide {
+    width: calc(100vw - 24px);
+  }
+}

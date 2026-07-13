@@ -1,0 +1,115 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0f0f10;
+  --bg-card: #171719;
+  --bg-side: #121214;
+  --bg-hover: #242428;
+  --bg-editor: #111113;
+  --border: rgba(255, 255, 255, 0.08);
+  /* syntax highlight — One Dark */
+  --hl-k:  #c678dd;
+  --hl-s:  #98c379;
+  --hl-f:  #e5c07b;
+  --hl-t:  #56b6c2;
+  --hl-tc: #e5c07b;
+  --hl-a:  #61afef;
+  --hl-n:  #d19a66;
+  --hl-c:  #5c6370;
+  --hl-b:  #828997;
+  --hl-p:  #abb2bf;
+  --border-md: rgba(255, 255, 255, 0.14);
+  --text: #f2f2f3;
+  --text-muted: #8d8d96;
+  --text-dim: #b3b3ba;
+  --accent: #f0821e;
+  --accent-bg: rgba(240, 130, 30, 0.14);
+  --accent-txt: #f5a44c;
+  --green: #22c55e;
+  --red: #ef4444;
+  --blue-txt: #60a5fa;
+  --gray-bg: rgba(255, 255, 255, 0.06);
+  --gray-border: rgba(255, 255, 255, 0.12);
+  --editor-line: rgba(255, 255, 255, 0.04);
+  --r: 6px;
+  --rl: 8px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "SF Mono", "Menlo", "Consolas", "Courier New", monospace;
+}
+
+html[data-theme="light"] {
+  --bg: #eceae6;
+  --bg-card: #f6f4ef;
+  --bg-side: #e2e0da;
+  --bg-hover: #ddd9d1;
+  /* Slightly darker/greyer than --bg on purpose: at the old near-white value
+     (#f0ede7, barely distinguishable from --bg/--bg-card) the editor pane
+     had almost no contrast against the rest of the light UI and the
+     syntax-highlighted text read poorly against it. */
+  --bg-editor: #dedbd4;
+  --border: rgba(51, 50, 46, 0.14);
+  /* syntax highlight — One Light */
+  --hl-k:  #a626a4;
+  --hl-s:  #50a14f;
+  --hl-f:  #4078f2;
+  --hl-t:  #0184bc;
+  --hl-tc: #c18401;
+  --hl-a:  #986801;
+  --hl-n:  #986801;
+  --hl-c:  #a0a1a7;
+  --hl-b:  #696c77;
+  --hl-p:  #383a42;
+  --border-md: rgba(39, 37, 31, 0.20);
+  --text: #1c1b18;
+  --text-muted: #6f6b63;
+  --text-dim: #4f4a42;
+  --accent: #f0821e;
+  --accent-bg: rgba(240, 130, 30, 0.12);
+  --accent-txt: #c96a10;
+  --green: #15803d;
+  --red: #dc2626;
+  --blue-txt: #2563eb;
+  --gray-bg: rgba(39, 37, 31, 0.06);
+  --gray-border: rgba(39, 37, 31, 0.14);
+  --editor-line: rgba(39, 37, 31, 0.04);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+}
+
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.14);
+}

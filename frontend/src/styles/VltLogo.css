@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
+
+.vlt-logo {
+  --vlt-cube-w: 1.42rem;
+  --vlt-logo-text-scale: 0.58;
+  --vlt-logo-letter-spacing: 4px;
+  --vlt-logo-text-left: 1.22;
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: calc(var(--vlt-cube-w) * 1.4);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.vlt-logo__cube {
+  width: var(--vlt-cube-w);
+  height: auto;
+  flex-shrink: 0;
+  transition: transform 0.4s ease;
+}
+
+.vlt-logo:hover .vlt-logo__cube {
+  transform: translateX(calc(var(--vlt-cube-w) * -0.18));
+}
+
+.vlt-logo__text {
+  font-family: 'Montserrat', var(--font, sans-serif);
+  font-size: calc(var(--vlt-cube-w) * var(--vlt-logo-text-scale));
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: var(--vlt-logo-letter-spacing);
+  color: var(--vlt-logo-text);
+  position: absolute;
+  left: calc(var(--vlt-cube-w) * var(--vlt-logo-text-left));
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease, color 0.25s ease;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.vlt-logo:hover .vlt-logo__text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.vlt-logo-static-wrap {
+  min-width: calc(var(--vlt-cube-w) * 3.12);
+  display: flex;
+  justify-content: center;
+  animation: vltLogoExpand 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.vlt-logo--static {
+  --vlt-logo-text-scale: 0.8;
+  --vlt-logo-letter-spacing: calc(var(--vlt-cube-w) * 0.11);
+  --vlt-logo-text-left: 1.32;
+  cursor: default;
+}
+
+.vlt-logo--static .vlt-logo__cube {
+  transform: translateX(0);
+  transition: none;
+  animation: none;
+}
+
+.vlt-logo--static .vlt-logo__text {
+  opacity: 1;
+  transform: translateX(0);
+  transition: none;
+  animation: staticTextIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+
+.vlt-logo--static:hover .vlt-logo__cube {
+  transform: translateX(0);
+}
+
+.vlt-logo--static:hover .vlt-logo__text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@keyframes vltLogoExpand {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(var(--vlt-cube-w) * -0.62)); }
+}
+
+@keyframes staticTextIn {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: translateX(0); }
+}

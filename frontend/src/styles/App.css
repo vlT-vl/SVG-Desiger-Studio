@@ -1,0 +1,105 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-pane {
+  flex-shrink: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* right pane fills remaining space */
+.app-pane--output {
+  flex: 1;
+}
+
+/* ── Resize divider ── */
+.app-divider {
+  width: 5px;
+  flex-shrink: 0;
+  background: var(--border);
+  cursor: col-resize;
+  transition: background .15s;
+  position: relative;
+  z-index: 2;
+}
+
+/* wider invisible grab zone via ::before */
+.app-divider::before {
+  content: "";
+  position: absolute;
+  inset: 0 -4px;
+}
+
+.app-divider:hover,
+.app-divider--active {
+  background: var(--accent);
+}
+
+/* ── Overlay (Settings / About) ── */
+.about-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: overlay-in .18s ease;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.about-overlay__bar {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  z-index: 10;
+}
+
+.about-overlay__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-card) 90%, transparent);
+  backdrop-filter: blur(4px);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background .15s, color .15s, transform .15s;
+}
+
+.about-overlay__close:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+/* The About and Settings views are scrollable inside the overlay */
+.about-overlay > .about,
+.about-overlay > .settings {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 24px 48px;
+}

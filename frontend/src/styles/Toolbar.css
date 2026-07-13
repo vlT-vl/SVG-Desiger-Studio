@@ -1,0 +1,195 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 46px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.toolbar-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: absolute;
+  left: calc((100% - 5px) * var(--app-split-pct, 50) / 100 + 5px);
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  justify-content: center;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Tabs ── */
+.toolbar-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .14s, color .14s, border-color .14s;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.toolbar-tab:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.toolbar-tab--active {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── Buttons ── */
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .14s, color .14s, border-color .14s, transform .14s;
+  user-select: none;
+}
+
+.toolbar-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.toolbar-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.toolbar-btn--icon {
+  padding: 0 8px;
+}
+
+.toolbar-btn--clear {
+  color: var(--text-muted);
+}
+
+.toolbar-btn--clear:hover {
+  color: var(--red, #f87171);
+  background: color-mix(in srgb, var(--red, #f87171) 8%, transparent);
+  border-color: color-mix(in srgb, var(--red, #f87171) 30%, var(--border));
+}
+
+@keyframes toolbarClearPulse {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(0.88); }
+  65%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.toolbar-btn--clear-anim {
+  animation: toolbarClearPulse .35s ease;
+  color: var(--red, #f87171);
+  background: color-mix(in srgb, var(--red, #f87171) 12%, transparent);
+  border-color: color-mix(in srgb, var(--red, #f87171) 40%, var(--border));
+}
+
+.toolbar-btn--menu {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--text);
+  padding: 0 8px;
+}
+
+/* ── Optimize stats button ── */
+.toolbar-optimize {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .14s, transform .14s;
+  user-select: none;
+}
+
+.toolbar-optimize:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+  transform: translateY(-1px);
+}
+
+.toolbar-optimize:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.toolbar-optimize__bytes {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.toolbar-optimize__pct {
+  font-weight: 700;
+}
+
+/* ── Vertical separator ── */
+.toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ── Dimension label ── */
+.toolbar-dim {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text-muted);
+  padding: 0 6px;
+  white-space: nowrap;
+}

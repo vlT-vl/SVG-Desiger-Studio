@@ -1,0 +1,628 @@
+.editor-wrap {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-editor, var(--bg));
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ── Gutter ── */
+.editor-gutter {
+  flex-shrink: 0;
+  width: 44px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg-editor, var(--bg)) 100%, transparent);
+  border-right: 1px solid var(--border);
+  padding: 10px 0;
+  user-select: none;
+  pointer-events: none;
+}
+
+.editor-gutter__line {
+  padding: 0 8px 0 0;
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+  opacity: 0.5;
+}
+
+/* ── Editor body: hl div + textarea stacked ── */
+.editor-body {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Shared geometry for both layers */
+.editor-hl,
+.editor-textarea {
+  position: absolute;
+  inset: 0;
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 2;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  margin: 0;
+  border: none;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+/* Highlight div — shows colored HTML, scrolled via JS */
+.editor-hl {
+  background: var(--bg-editor, var(--bg));
+  color: var(--text-dim);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Textarea — transparent text so the hl div shows through */
+.editor-textarea {
+  background: transparent;
+  color: transparent;
+  caret-color: var(--accent);
+  resize: none;
+  outline: none;
+  z-index: 1;
+}
+
+/* Scoped to :focus on purpose — an unscoped ::selection rule renders with this
+   same accent style regardless of focus state (that's how ::selection works
+   in every browser, not just WebKit), so a selection made before focus moves
+   away (e.g. clicking the color picker's square/hue strip, which are plain
+   divs and never steal focus, so no blur ever fires to trigger the JS-side
+   collapse in handleBlur()) kept looking "still actively selected" even after
+   the picker closed. Scoping to :focus makes the browser fall back to its
+   own muted/default unfocused-selection look the instant focus leaves, no
+   matter what caused the focus loss — a robust CSS-level backstop that
+   doesn't depend on blur firing at all. handleBlur() is kept too (still
+   correct, still useful to avoid stale selectionStart/End state). */
+.editor-textarea:focus::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* ── Live SVG syntax warning ── */
+.editor-syntax-warning {
+  position: absolute;
+  left: auto;
+  right: 12px;
+  bottom: 12px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  max-width: 78px;
+  min-height: 26px;
+  padding: 4px 8px 4px 7px;
+  border: 1px solid color-mix(in srgb, var(--red, #ef4444) 34%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-card) 96%, var(--red, #ef4444) 4%);
+  backdrop-filter: blur(10px);
+  color: var(--text);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.26);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font);
+  opacity: 0.9;
+  transform: translateZ(0);
+  transition: opacity .15s ease, max-width .18s ease, width .18s ease, padding .18s ease, transform .15s ease, border-color .15s ease, background .15s ease;
+  animation: syntax-warning-in .16s ease;
+}
+
+.editor-syntax-warning svg {
+  flex-shrink: 0;
+  color: var(--red, #ef4444);
+}
+
+.editor-syntax-warning__label {
+  flex-shrink: 0;
+  color: var(--red, #ef4444);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.editor-syntax-warning__where {
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--red, #ef4444) 82%, var(--text));
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.editor-syntax-warning__msg {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.editor-syntax-warning .editor-syntax-warning__label,
+.editor-syntax-warning .editor-syntax-warning__msg {
+  display: none;
+}
+
+.editor-syntax-warning:hover,
+.editor-syntax-warning:focus-visible {
+  width: min(640px, calc(100% - 72px));
+  max-width: min(640px, calc(100% - 72px));
+  justify-content: flex-start;
+  gap: 8px;
+  opacity: 1;
+  padding: 6px 10px;
+  border-color: color-mix(in srgb, var(--red, #ef4444) 52%, var(--border));
+  background: color-mix(in srgb, var(--bg-card) 98%, var(--red, #ef4444) 2%);
+}
+
+.editor-syntax-warning:hover .editor-syntax-warning__label,
+.editor-syntax-warning:hover .editor-syntax-warning__msg,
+.editor-syntax-warning:focus-visible .editor-syntax-warning__label,
+.editor-syntax-warning:focus-visible .editor-syntax-warning__msg {
+  display: inline;
+}
+
+@keyframes syntax-warning-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Editor top-right action row (Clear / Copy / Snippets) ──
+   A single flex row instead of three independently right-positioned
+   elements: when any one button's label expands on hover, normal flex
+   reflow pushes every other item in the SAME row out of the way for free —
+   no hand-tuned per-pair pixel math, and it keeps working correctly no
+   matter how many buttons end up in this row. Snippets is last in DOM
+   order, so in a normal (non-reversed) row it always lands at the
+   container's fixed right edge — "always present, rightmost" — while
+   Clear/Copy conditionally tuck in to its left; removing either shrinks the
+   row and everything reflows automatically, so there's never an empty gap
+   at the edge. */
+.editor-toolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-toolbar--compact .editor-action-wrap {
+  opacity: 0.18;
+  transform: translateY(-2px) scale(0.92);
+}
+
+.editor-toolbar--compact:hover .editor-action-wrap,
+.editor-toolbar--compact .editor-action-wrap:focus-visible,
+.editor-toolbar--compact .editor-action-wrap--active {
+  opacity: 1;
+  transform: none;
+}
+
+/* One continuous pill (icon + label share the SAME opaque background, and
+   the WHOLE pill — not just the small icon — is the real <button>, so a
+   click anywhere on it, label included, triggers the action) instead of a
+   solid circular button next to bare floating label text. The old label had
+   no backdrop of its own, so sliding it out over the code editor left raw
+   text overlapping the syntax-highlighted source underneath it — a real
+   legibility glitch, not just a style preference. border-radius:15px at
+   height:30px is a perfect circle when collapsed (label at max-width:0
+   contributes no width) and a true stadium/pill once the label expands —
+   same value works for both states, no separate "collapsed vs expanded"
+   corner-radius rule needed. No overflow:hidden here — the label already
+   self-clips (its own overflow:hidden + max-width below), and this wrap is
+   also the positioning root for the Snippets dropdown menu, which is taller
+   than the pill itself and must never be clipped by it. */
+.editor-action-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s, border-color .15s, transform .15s;
+}
+
+.editor-wrap:hover .editor-action-wrap,
+.editor-action-wrap--active {
+  opacity: 1;
+}
+
+.editor-action-wrap--active {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+/* Label is the FIRST flex child (the icon "slot" is second, flush to the
+   pill's right edge) — so it grows leftward out from behind the icon,
+   staying inside the shared pill background the whole time instead of
+   floating free. Its own overflow:hidden clips the text during the
+   max-width animation — the wrap itself doesn't need to. */
+.editor-action-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transition: max-width .2s ease, opacity .2s ease, padding-left .2s ease, color .15s ease;
+}
+
+.editor-action-wrap:hover .editor-action-label,
+.editor-action-wrap--active .editor-action-label {
+  max-width: 110px;
+  opacity: 1;
+  padding-left: 10px;
+}
+
+.editor-action-wrap:hover .editor-action-label {
+  color: var(--text);
+}
+
+.editor-action-wrap--active .editor-action-label {
+  color: var(--accent);
+}
+
+/* Icon slot — a plain <span> now (the wrap itself is the real <button>), no
+   background/border of its own, just the icon glyph; 28px so 28 + the wrap's
+   2px border = 30px total, matching the wrap's own height exactly (no gap/
+   clip mismatch between this and the pill's rounded corners). */
+.editor-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: color .15s;
+}
+
+.editor-action-wrap:hover .editor-action-btn {
+  color: var(--text);
+}
+
+.editor-action-wrap--active .editor-action-btn {
+  color: var(--accent);
+}
+
+/* Clear gets a destructive-action red hover on the whole pill instead of the
+   accent color — icon and label both, since either is now the same click
+   target. */
+.editor-action-wrap--danger:hover .editor-action-btn,
+.editor-action-wrap--danger:hover .editor-action-label {
+  color: var(--red, #f87171);
+}
+
+/* Positioning root for the Snippets dropdown — kept separate from the
+   trigger <button> itself, since the menu (with its own nested buttons)
+   can never legally live inside a <button> element. */
+.editor-snippets-trigger {
+  position: relative;
+}
+
+/* Dropdown — starts right below the Snippets pill, fades/scales in
+   (reuses the merge card's own entrance keyframe for a consistent feel) */
+.editor-snippets-menu {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  min-width: 180px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-md, var(--border));
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .4), 0 2px 8px rgba(0, 0, 0, .25);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  animation: merge-card-in .15s ease;
+}
+
+/* Right-click "Wrap in <g>" — same look, but positioned at the cursor
+   (left/top set inline from the click's clientX/clientY) instead of
+   anchored below the Snippets button. Compound selector so it reliably
+   overrides .editor-snippets-menu's position/right regardless of source
+   order; left/top themselves come from the inline style either way. */
+.editor-snippets-menu.editor-context-menu {
+  position: fixed;
+  right: auto;
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.editor-snippets-item {
+  display: flex;
+  align-items: center;
+  padding: 7px 9px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font);
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s;
+}
+
+.editor-snippets-item:hover {
+  background: var(--bg-hover);
+}
+
+/* ── Drag & drop ── */
+.editor-wrap--dropping {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+}
+
+.editor-drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.editor-drop-zone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg-editor, var(--bg)));
+  transition: background .15s ease, color .15s ease;
+}
+
+.editor-drop-zone + .editor-drop-zone {
+  border-top: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.editor-drop-zone__title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.editor-drop-zone__hint {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.editor-drop-zone--active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg-editor, var(--bg)));
+}
+
+/* ── Merge panel — backdrop centrato sull'editor ── */
+.editor-merge-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 50%, transparent);
+  backdrop-filter: blur(3px);
+  animation: merge-in .15s ease;
+}
+
+@keyframes merge-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.editor-merge-card {
+  width: 320px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-md, var(--border));
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: merge-card-in .18s ease;
+}
+
+@keyframes merge-card-in {
+  from { opacity: 0; transform: translateY(6px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.editor-merge-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 12px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.editor-merge-card__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editor-merge-card__title svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.editor-merge-card__title--error svg {
+  color: var(--red, #f87171);
+}
+
+.editor-import-error-msg {
+  margin: 0;
+  padding: 2px 2px 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.editor-merge-card__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+
+.editor-merge-card__close:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.editor-merge-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+}
+
+.editor-merge-fields {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 2px 0;
+}
+
+.editor-merge-error {
+  color: var(--red, #f87171);
+  font-size: 11px;
+  padding: 2px 2px 0;
+}
+
+.editor-merge-field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text-muted);
+}
+
+.editor-merge-field svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.editor-merge-field input[type="number"] {
+  width: 62px;
+  height: 26px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 0 6px;
+  outline: none;
+  transition: border-color .14s;
+}
+
+.editor-merge-field input[type="number"]:focus {
+  border-color: var(--accent);
+}
+
+.editor-merge-card__footer {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  padding: 9px 12px 11px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.editor-merge-btn {
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .14s, transform .12s;
+}
+
+.editor-merge-btn:active { transform: scale(0.97); }
+
+.editor-merge-btn--ghost {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.editor-merge-btn--ghost:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.editor-merge-btn--primary {
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.editor-merge-btn--primary:hover {
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+}
+
+.editor-merge-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editor-merge-btn--primary:disabled:hover {
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+}
+
+/* ── Syntax colors — theme-adaptive via global CSS vars ── */
+.editor-hl .hl-k  { color: var(--hl-k); }
+.editor-hl .hl-s  { color: var(--hl-s); }
+.editor-hl .hl-f  { color: var(--hl-f); }
+.editor-hl .hl-t  { color: var(--hl-t); }
+.editor-hl .hl-tc { color: var(--hl-tc); }
+.editor-hl .hl-a  { color: var(--hl-a); }
+.editor-hl .hl-n  { color: var(--hl-n); }
+.editor-hl .hl-c  { color: var(--hl-c); font-style: italic; }
+.editor-hl .hl-b  { color: var(--hl-b); }
+.editor-hl .hl-p  { color: var(--hl-p); }
