@@ -27,8 +27,16 @@
   --accent: #f0821e;
   --accent-bg: rgba(240, 130, 30, 0.14);
   --accent-txt: #f5a44c;
+  --accent-border: rgba(240, 130, 30, 0.26);
   --green: #22c55e;
+  --green-bg: rgba(34, 197, 94, 0.12);
+  --green-border: rgba(34, 197, 94, 0.3);
   --red: #ef4444;
+  --red-bg: rgba(239, 68, 68, 0.12);
+  --red-border: rgba(239, 68, 68, 0.3);
+  --amber: #f59e0b;
+  --amber-bg: rgba(245, 158, 11, 0.12);
+  --amber-border: rgba(245, 158, 11, 0.3);
   --blue-txt: #60a5fa;
   --gray-bg: rgba(255, 255, 255, 0.06);
   --gray-border: rgba(255, 255, 255, 0.12);
@@ -68,8 +76,16 @@ html[data-theme="light"] {
   --accent: #f0821e;
   --accent-bg: rgba(240, 130, 30, 0.12);
   --accent-txt: #c96a10;
+  --accent-border: rgba(240, 130, 30, 0.28);
   --green: #15803d;
+  --green-bg: rgba(22, 128, 58, 0.10);
+  --green-border: rgba(22, 128, 58, 0.24);
   --red: #dc2626;
+  --red-bg: rgba(197, 48, 48, 0.10);
+  --red-border: rgba(197, 48, 48, 0.24);
+  --amber: #a15c00;
+  --amber-bg: rgba(161, 92, 0, 0.10);
+  --amber-border: rgba(161, 92, 0, 0.24);
   --blue-txt: #2563eb;
   --gray-bg: rgba(39, 37, 31, 0.06);
   --gray-border: rgba(39, 37, 31, 0.14);
@@ -96,20 +112,10 @@ button {
   font: inherit;
 }
 
+* {
+  scrollbar-width: none;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-}
-
-html[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.14);
+  display: none;
 }

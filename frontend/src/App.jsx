@@ -13,6 +13,7 @@ import { getColorAtCursor } from "./lib/colorAtCursor.js";
 import { resolveElementRange, findElementAtSelection } from "./lib/svg/elementLocator.js";
 import { resolveColorScheme } from "./lib/svg/scheme.js";
 import { applyTheme, getBrowserSystemTheme, getNexSystemTheme, getThemePreference, syncThemeWithNexAppearance } from "./lib/theme.js";
+import { prefs } from "./lib/prefs.js";
 import { UI_KEY, DEFAULT_UI } from "./lib/uiSettings.js";
 import "./styles/App.css";
 
@@ -160,7 +161,9 @@ export default function App() {
   function setUiSettings(patch) {
     setUiSettingsState(prev => {
       const next = { ...prev, ...patch };
-      try { localStorage.setItem(UI_KEY, JSON.stringify(next)); } catch {}
+      const serialized = JSON.stringify(next);
+      try { localStorage.setItem(UI_KEY, serialized); } catch {}
+      prefs.set(UI_KEY, serialized).catch(() => {});
       return next;
     });
   }

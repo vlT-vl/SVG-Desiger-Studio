@@ -210,7 +210,14 @@ jobs:
           cd artifacts
           for dir in */; do
             name="${dir%/}"
-            zip -r "../${name}.zip" "$name"
+            case "$name" in
+              build-linux-*)
+                zip -r "../${name}.zip" "$name"
+                ;;
+              *)
+                (cd "$name"/*/* && zip -r "$GITHUB_WORKSPACE/${name}.zip" *)
+                ;;
+            esac
           done
 
       - uses: softprops/action-gh-release@v3

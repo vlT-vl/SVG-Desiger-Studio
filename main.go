@@ -11,6 +11,8 @@ import (
 	nexpkg "nex/nex"
 )
 
+const defaultUpdateURL = "https://github.com/vlT-vl/SVG-Desiger-Studio"
+
 //go:embed frontend/dist
 var distFS embed.FS
 
@@ -33,8 +35,8 @@ func main() {
 	a := nexpkg.New(nexpkg.Config{
 		SecurityPolicy:   svgDesignerSecurityPolicy{},
 		Title:            appName,
-		Width:            1800,
-		Height:           1200,
+		Width:            1440,
+		Height:           900,
 		Debug:            os.Getenv("APP_DEV") == "1",
 		AppVersion:       appVersion,
 		AppBuild:         appBuild,
@@ -47,7 +49,10 @@ func main() {
 		IdleTimeout:      12 * time.Hour,
 		EnvFile:          envFile,
 		SingleInstanceID: appID,
+		UpdateURL:        envValue(envValues, "NEX_UPDATE_URL", defaultUpdateURL),
 	})
+
+	registerPreferenceHandlers(a)
 
 	if err := a.Run(); err != nil {
 		log.Fatal(err)

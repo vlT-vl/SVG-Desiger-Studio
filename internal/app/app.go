@@ -1,5 +1,3 @@
-// Package app wires together webview, local HTTP server, session security,
-// RPC dispatch, and backend-to-frontend events.
 package app
 
 import (
@@ -25,9 +23,9 @@ import (
 	"nex/internal/meta"
 	"nex/internal/session"
 	"nex/internal/system"
+	"nex/internal/updater"
 )
 
-// Config configures the application.
 type Config struct {
 	Title        string
 	Width        int
@@ -37,23 +35,21 @@ type Config struct {
 	AppBuild     string
 	AppUpdated   string
 	AppAuthor    string
-	Icon         string        // app icon source used by dev/build scripts
-	Dist         embed.FS      // React build, embedded in binary
-	DistDir      string        // subdirectory inside Dist (default "frontend/dist")
-	DevServerURL string        // e.g. http://127.0.0.1:5179 for Vite HMR
-	IdleTimeout  time.Duration // session idle timeout (default 12h)
-	EnvFile      string        // default ".env"
-	PublicPrefix string        // default "VITE_"
+	Icon         string
+	Dist         embed.FS
+	DistDir      string
+	DevServerURL string
+	IdleTimeout  time.Duration
+	EnvFile      string
+	PublicPrefix string
 
 	SingleInstanceID string
 	OnStartup        func(*App)
 	OnDomReady       func(*App)
 	OnShutdown       func(*App)
-	OnBeforeClose    func(*App) bool // return true to prevent app.quit
+	OnBeforeClose    func(*App) bool
 	OnSecondInstance func(*App, []string)
 
-	// SecurityPolicy and focused hooks are optional. Nil means allow, preserving
-	// the framework's trusted-frontend default.
 	SecurityPolicy     core.SecurityPolicy
 	OnSecurityDecision func(*core.Context, core.SecurityDecision) error
 	OnShellCommand     func(*core.Context, core.SecurityDecision) error
@@ -61,9 +57,12 @@ type Config struct {
 	OnWindowEval       func(*core.Context, core.SecurityDecision) error
 	OnAppExit          func(*core.Context, core.SecurityDecision) error
 	OnOpenURL          func(*core.Context, core.SecurityDecision) error
+
+	UpdateURL          string
+	UpdateAllowedHosts []string
+	UpdatePublicKeys   [][]byte
 }
 
-// App is a running nex application.
 type App struct {
 	cfg       Config
 	wv        webview.WebView
@@ -72,6 +71,8 @@ type App struct {
 	handlers  map[string]core.HandlerFunc
 	env       *config.Env
 	single    *singleInstance
+	upd       *updater.Updater
+	updOnce   sync.Once
 	winMu     sync.RWMutex
 	winTitle  string
 	winWidth  int
@@ -79,7 +80,6 @@ type App struct {
 	winHint   string
 }
 
-// New creates the application, loads .env, and registers all sys.* handlers.
 func New(cfg Config) *App {
 	if cfg.Width == 0 {
 		cfg.Width = 1024
@@ -119,18 +119,18 @@ func New(cfg Config) *App {
 		winHint:   "none",
 	}
 	system.Register(a)
+	runUpdaterBootstrap(a.updaterAppID())
+	a.setupUpdater()
 	a.Register("sys.app.info", a.sysAppInfo)
 	a.Register("sys.framework.info", a.sysFrameworkInfo)
 	a.Register("sys.framework.stack", a.sysFrameworkStack)
 	return a
 }
 
-// Register implements core.Registrar (internal use, no namespace guard).
 func (a *App) Register(method string, fn core.HandlerFunc) {
 	a.handlers[method] = fn
 }
 
-// Handle registers an application handler. The "sys." namespace is reserved.
 func (a *App) Handle(method string, fn core.HandlerFunc) {
 	if strings.HasPrefix(method, "sys.") {
 		panic("nex: 'sys.' namespace is reserved")
@@ -138,10 +138,8 @@ func (a *App) Handle(method string, fn core.HandlerFunc) {
 	a.handlers[method] = fn
 }
 
-// Env returns the loaded environment (for reading backend-only variables).
 func (a *App) Env() *config.Env { return a.env }
 
-// Emit sends an event to the frontend.
 func (a *App) Emit(event string, payload any) {
 	if a.wv == nil {
 		return
@@ -151,15 +149,12 @@ func (a *App) Emit(event string, payload any) {
 	a.wv.Dispatch(func() { a.wv.Eval(js) })
 }
 
-// Eval executes JavaScript in the webview on the main thread.
 func (a *App) Eval(js string) {
 	if a.wv == nil {
 		return
 	}
 	a.wv.Dispatch(func() { a.wv.Eval(js) })
 }
-
-// --- core.Host ---------------------------------------------------------------
 
 func (a *App) Authorize(c *core.Context, d core.SecurityDecision) error {
 	if d.Method == "" && c != nil {
@@ -192,29 +187,19 @@ func (a *App) Authorize(c *core.Context, d core.SecurityDecision) error {
 			return a.cfg.OnWindowEval(c, d)
 		}
 	case "app":
-		if (d.Operation == "exit" || d.Operation == "restart" || d.Operation == "quit") && a.cfg.OnAppExit != nil {
+		if (d.Operation == "exit" || d.Operation == "restart" || d.Operation == "quit" || d.Operation == "update.install") && a.cfg.OnAppExit != nil {
 			return a.cfg.OnAppExit(c, d)
 		}
 	}
-	// Backend-owned safety net: if the app hasn't set a SecurityPolicy nor a
-	// focused hook for this exact category/operation, a privileged decision
-	// (arbitrary shell exec, filesystem access, process lifecycle,
-	// window.eval, password prompt, native clipboard) still requires an
-	// explicit yes/no from the user — shown here via a native zenity dialog
-	// dispatched on the webview's main thread, never delegated to frontend
-	// JS (which a compromised/malicious page content could just skip by
-	// calling call() directly).
+
 	if a.cfg.SecurityPolicy == nil && isPrivilegedDecision(d) {
 		return a.confirmPrivileged(d)
 	}
 	return nil
 }
 
-// privilegedDecisions mirrors frontend/src/lib/nex.js's privilegedApiIds
-// classification, category/operation pairs that always require confirmation
-// unless the app has taken over via SecurityPolicy or a focused hook.
 var privilegedDecisions = map[string]map[string]bool{
-	"app":        {"restart": true, "exit": true, "quit": true},
+	"app":        {"restart": true, "exit": true, "quit": true, "update.install": true},
 	"shell":      {"exec": true, "run": true, "start": true},
 	"filesystem": {"read": true, "write": true, "list": true, "exists": true, "stat": true, "mkdir": true, "remove": true, "rename": true, "trashEmpty": true},
 	"window":     {"eval": true},
@@ -227,9 +212,6 @@ func isPrivilegedDecision(d core.SecurityDecision) bool {
 	return ok && ops[d.Operation]
 }
 
-// confirmPrivileged shows a native (zenity) yes/no dialog on the main thread
-// and blocks the RPC call until the user answers. Denying returns a
-// "forbidden" RPC error to the caller.
 func (a *App) confirmPrivileged(d core.SecurityDecision) error {
 	method := d.Method
 	if method == "" {
@@ -305,21 +287,22 @@ func (a *App) WindowInfo() map[string]any {
 }
 
 func (a *App) Quit() {
+	a.tryQuit()
+}
+
+func (a *App) tryQuit() bool {
 	if a.cfg.OnBeforeClose != nil && a.cfg.OnBeforeClose(a) {
-		return
+		return false
 	}
 	if a.wv != nil {
 		a.wv.Dispatch(func() { a.wv.Terminate() })
 	}
+	return true
 }
 
-// ReleaseSingleInstance is safe to call more than once: stopSingleInstance
-// already guards against a nil a.single and ignores close/remove errors.
 func (a *App) ReleaseSingleInstance() {
 	a.stopSingleInstance()
 }
-
-// --- sys.app.info / sys.framework.info ---------------------------------------
 
 func (a *App) sysFrameworkInfo(_ *core.Context, _ json.RawMessage) (any, error) {
 	return meta.Info(), nil
@@ -377,10 +360,6 @@ func (a *App) sysAppInfo(_ *core.Context, _ json.RawMessage) (any, error) {
 	}, nil
 }
 
-// --- Run ---------------------------------------------------------------------
-
-// Run starts the local HTTP server and opens the native webview.
-// Blocks until the window is closed. Must be called from main goroutine.
 func (a *App) Run() error {
 	runtime.LockOSThread()
 
@@ -455,8 +434,6 @@ func (a *App) Run() error {
 	return nil
 }
 
-// --- Security middleware -----------------------------------------------------
-
 func (a *App) secure(baseURL string, next http.Handler) http.Handler {
 	allowed := map[string]bool{baseURL: true}
 	if a.cfg.DevServerURL != "" {
@@ -489,8 +466,6 @@ func (a *App) secure(baseURL string, next http.Handler) http.Handler {
 	})
 }
 
-// --- Handlers ----------------------------------------------------------------
-
 func (a *App) handleSession(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"id":        a.session.ID,
@@ -506,6 +481,7 @@ func (a *App) handleDomReady(w http.ResponseWriter, r *http.Request) {
 	if a.cfg.OnDomReady != nil {
 		go a.cfg.OnDomReady(a)
 	}
+	a.startAutoUpdate()
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
@@ -546,8 +522,6 @@ func (a *App) handleRPC(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"result": result})
 }
-
-// --- Helpers -----------------------------------------------------------------
 
 func spaHandler(dist fs.FS) http.Handler {
 	fs_ := http.FileServer(http.FS(dist))

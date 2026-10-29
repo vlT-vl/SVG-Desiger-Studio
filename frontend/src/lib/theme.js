@@ -1,4 +1,5 @@
 import { appearance } from "./nex.js";
+import { prefs } from "./prefs.js";
 
 const STORAGE_KEY = "nex-theme";
 const THEMES = new Set(["system", "light", "dark"]);
@@ -47,12 +48,18 @@ export function applyTheme(preference = getThemePreference(), systemTheme = getB
   return { preference: normalized, theme: resolved };
 }
 
-export function setThemePreference(preference) {
+export function restoreThemePreference(preference) {
   const normalized = THEMES.has(preference) ? preference : "system";
   try {
     localStorage.setItem(STORAGE_KEY, normalized);
   } catch {}
   return applyTheme(normalized);
+}
+
+export function setThemePreference(preference) {
+  const state = restoreThemePreference(preference);
+  prefs.set(STORAGE_KEY, state.preference).catch(() => {});
+  return state;
 }
 
 export async function syncThemeWithNexAppearance(preference = getThemePreference()) {

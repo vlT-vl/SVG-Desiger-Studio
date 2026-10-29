@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0--R130726-orange?style=flat-square" alt="version"/>
-  <img src="https://img.shields.io/badge/nex-0.1.0--R070726-blue?style=flat-square" alt="nex"/>
+  <img src="https://img.shields.io/badge/version-0.1.1--R291026-orange?style=flat-square" alt="version"/>
+  <img src="https://img.shields.io/badge/nex-0.1.2--R281026-blue?style=flat-square" alt="nex"/>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey?style=flat-square" alt="platform"/>
   <img src="https://img.shields.io/badge/react-19-61DAFB?style=flat-square&logo=react&logoColor=white" alt="react"/>
   <img src="https://img.shields.io/badge/go-1.26-00ADD8?style=flat-square&logo=go" alt="go"/>
@@ -79,9 +79,9 @@ Starts Vite HMR on `127.0.0.1:5179` and the Go backend on `127.0.0.1:34115`.
 make build
 ```
 
-Output: `release/0.1.0-R130726/<platform>/SVG Designer Studio.app|exe`
+Output: `release/0.1.1-R291026/<platform>/SVG Designer Studio.app|exe`
 
-**CI**: `.github/workflows/build.yml` runs this same build on every push, one native GitHub-hosted runner per target OS/arch (darwin amd64+arm64, linux amd64, linux arm64, windows amd64 cross-built via mingw-w64) — cgo/WebKit bindings mean it can't cross-compile from a single host. Pushing a tag in the required `v<AppVersion>-<AppBuild>` format, for example `v0.1.0-R130726`, also publishes a GitHub Release with a zip per platform.
+**CI**: `.github/workflows/build.yml` runs this same build on every push, one native GitHub-hosted runner per target OS/arch (darwin amd64+arm64, linux amd64, linux arm64, windows amd64 cross-built via mingw-w64) — cgo/WebKit bindings mean it can't cross-compile from a single host. Pushing a tag in the required `v<AppVersion>-<AppBuild>` format, for example `v0.1.1-R291026`, also publishes a GitHub Release with a zip per platform.
 
 **macOS bundle signing**: both `make dev` and `make build` ad-hoc sign (`codesign --force --deep --sign -`) the `.app` bundle they produce — a bare `go build` binary copied into `Contents/MacOS` has no bundle-level signature, which makes Launch Services refuse to open it at all (`_LSOpenURLsWithCompletionHandler() failed with error -54`). This free ad-hoc signature is enough for local/CI-built, non-quarantined bundles; it does **not** satisfy Gatekeeper for a bundle downloaded from the internet — that still needs a real Developer ID signature + notarization (out of scope).
 
@@ -92,12 +92,12 @@ Output: `release/0.1.0-R130726/<platform>/SVG Designer Studio.app|exe`
 ```text
 svg-designer/
 ├── .github/workflows/build.yml  # CI: cross-platform build matrix on every push, GitHub Release on version tags
-├── main.go                # entry point — 1800×1000, single instance "dev.vlt.svg-designer"
+├── main.go                # entry point — 1440×900, single instance "dev.vlt.svg-designer", compiled-in update URL (Config.UpdateURL)
 ├── app_security.go        # SecurityPolicy — allows all operations (no native confirmation dialogs)
-├── version.go             # fallback app metadata (0.1.0 / R130726)
-├── .env                   # app identity (NEX_APP_NAME, NEX_APP_ID, …)
-├── build.go, dev.go        # nex framework runtime — both carry a macOS ad-hoc codesign fix (not otherwise modified)
-├── go.mod, Makefile, config/, internal/, nex/   # nex framework runtime — not modified
+├── prefs.go               # backend-saved preferences (prefs.get/set/location/setLocation) — theme + UI settings survive restarts
+├── version.go             # fallback app metadata (0.1.1 / R291026)
+├── .env                   # app identity (NEX_APP_NAME, NEX_APP_ID, …) + NEX_UPDATE_URL (development override of the updates source)
+├── build.go, dev.go, go.mod, Makefile, config/, internal/, nex/   # nex framework 0.1.2 runtime (includes internal/updater/) — not modified
 ├── frontend/
 │   └── src/
 │       ├── main.jsx               # React entry point
@@ -111,14 +111,16 @@ svg-designer/
 │       │   ├── Toolbar.jsx        # tabs, optimize stats, import, clear, color picker, theme toggle
 │       │   ├── ColorPicker.jsx    # color picker: gradient sq + hue strip + hex input (no deps)
 │       │   ├── NexLogo.jsx        # nex framework logo (About page)
+│       │   ├── UpdaterPanel.jsx   # automatic updates card (status, check, download, install, settings)
 │       │   └── VltLogo.jsx        # vlT logo (About page)
 │       ├── views/
 │       │   ├── About.jsx          # app info, license modal, nex framework modal
-│       │   └── Settings.jsx       # theme toggle, interface toggles, import/export/reset settings, app info
-│       ├── styles/                # one .css file per component/view
+│       │   └── Settings.jsx       # theme, interface toggles, preferences file location, updates, import/export/reset settings, app info
+│       ├── styles/                # one .css file per component/view (Settings.css + Updater.css for the Settings view)
 │       └── lib/
 │           ├── nex.js             # nex JS bridge (framework file — not modified)
-│           ├── theme.js           # OS theme detection via nex appearance.info()
+│           ├── theme.js           # OS theme detection via nex appearance.info() + theme preference persistence
+│           ├── prefs.js           # RPC wrapper for the backend preferences (prefs.go)
 │           ├── uiSettings.js      # UI_KEY + DEFAULT_UI (shared App.jsx ⇄ Settings.jsx)
 │           ├── highlight.js       # pure-JS tokenizers: highlightSvg() + highlightJsx()
 │           ├── colorAtCursor.js   # color detection at cursor + HSV↔hex utilities

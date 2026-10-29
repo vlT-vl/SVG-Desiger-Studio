@@ -1,70 +1,7 @@
-/**
- * nex client bridge — pure JavaScript, no TypeScript, no external deps.
- *
- * The Go backend injects window.__NEX__ = { token, base } before any page
- * script runs (via webview.Init). This module reads it and provides:
- *
- *   call(method, params?)  — RPC call to the Go backend
- *   on(event, handler)     — subscribe to backend events; returns unsubscribe fn
- *   session()              — fetch current session info
- *
- *   os.info()
- *   os.host()
- *   os.user()
- *   os.runtime()
- *   os.process()
- *   os.network()
- *   os.disks()
- *   os.memory()
- *   os.time()
- *   screen.info()
- *   env.paths()
- *   dialog.open(opts?)
- *   dialog.save(opts?)
- *   dialog.message(opts)
- *   notify.toast(opts)
- *   shell.openURL(url)
- *   shell.openPath(path)
- *   shell.showInFolder(path)
- *   shell.exec(command, opts?)
- *   shell.run(command, opts?)
- *   shell.start(command, opts?)
- *   win.setTitle(title)
- *   win.setSize(w, h, hint?)
- *   win.info()
- *   win.fullscreen()
- *   win.unfullscreen()
- *   win.reload()
- *   win.print()
- *   win.eval(js)
- *   fs.read(path, encoding?)
- *   fs.write(path, data, encoding?)
- *   fs.list(path)
- *   fs.exists(path)
- *   fs.stat(path)
- *   fs.mkdir(path)
- *   fs.remove(path, recursive?)
- *   fs.rename(from, to)
- *   clipboard.writeText(text)   — DOM navigator.clipboard (no backend round-trip)
- *   clipboard.readText()        — DOM navigator.clipboard
- *   app.info()
- *   framework.info()
- *   app.paths()
- *   app.runtime()
- *   app.restart()
- *   app.quit()
- *   native clipboard, menu, appearance, power, shortcuts, protocol, updater,
- *   secure storage availability, file associations and recent documents helpers
- *   log.info(message)
- *   dragdrop.onFileDrop(callback, target?)
- */
-
 const NEX = (typeof window !== "undefined" && window.__NEX__) || { token: "", base: "" };
 const API_BASE = NEX.base
   ? `${NEX.base.replace(/\/$/, "")}/api`
   : import.meta.env.VITE_API_BASE ?? "/api";
-
-// ── Core RPC ─────────────────────────────────────────────────────────────────
 
 export class nexError extends Error {
   constructor(code, message) {
@@ -87,12 +24,14 @@ function requireBridge() {
   }
 }
 
-/**
- * Call a backend RPC method.
- * @param {string} method
- * @param {unknown} [params]
- * @returns {Promise<unknown>}
- */
+let updaterConfirmStarted = false;
+
+function confirmUpdaterOnce() {
+  if (updaterConfirmStarted) return;
+  updaterConfirmStarted = true;
+  call("sys.updater.confirm").catch(() => {});
+}
+
 export async function call(method, params = {}) {
   requireBridge();
   const res = await fetch(`${API_BASE}/rpc`, {
@@ -106,22 +45,16 @@ export async function call(method, params = {}) {
   if (!res.ok) throw new nexError(`http_${res.status}`, `HTTP ${res.status}`);
   const data = await res.json();
   if (data.error) throw new nexError(data.error.code, data.error.message);
+  confirmUpdaterOnce();
   return data.result;
 }
 
-/**
- * Subscribe to a backend event.
- * @param {string} event
- * @param {(payload: unknown) => void} handler
- * @returns {() => void} unsubscribe
- */
 export function on(event, handler) {
   const listener = (e) => handler(e.detail);
   window.addEventListener(`nex:${event}`, listener);
   return () => window.removeEventListener(`nex:${event}`, listener);
 }
 
-/** Fetch current session metadata. */
 export async function session() {
   requireBridge();
   const res = await fetch(`${API_BASE}/session`, {
@@ -130,8 +63,6 @@ export async function session() {
   if (!res.ok) throw new nexError(`http_${res.status}`, `HTTP ${res.status}`);
   return res.json();
 }
-
-// ── Webview runtime integrations ─────────────────────────────────────────────
 
 const shortcutHandlers = new Map();
 let shortcutListenerInstalled = false;
@@ -332,8 +263,6 @@ async function runMenuItem(item) {
 
 on("menu.changed", (definition) => renderRuntimeMenu(definition));
 
-// ── Namespaced helpers ────────────────────────────────────────────────────────
-
 export const os = {
   info: () => call("sys.os.info"),
   host: () => call("sys.os.host"),
@@ -376,21 +305,16 @@ export const env = {
 };
 
 export const dialog = {
-  /** @param {{ title?:string, multiple?:boolean, directory?:boolean, startDir?:string, filters?:Array<{name:string,patterns:string[]}>}} [opts] */
   open: (opts = {}) => call("sys.dialog.open", opts),
-  /** @param {{ title?:string, defaultName?:string, confirmOverwrite?:boolean, filters?:Array<{name:string,patterns:string[]}>}} [opts] */
   save: (opts = {}) => call("sys.dialog.save", opts),
-  /** @param {{ level?:"info"|"warning"|"error"|"question", title?:string, text:string }} opts */
   message: (opts) => call("sys.dialog.message", opts),
   entry: (opts = {}) => call("sys.dialog.entry", opts),
   password: (opts = {}) => call("sys.dialog.password", opts),
   color: (opts = {}) => call("sys.dialog.color", opts),
-  /** Check if native file dialogs are available on this platform (always true on macOS/Windows; heuristic on Linux). */
   isSupported: () => call("sys.dialog.isSupported"),
 };
 
 export const notify = {
-  /** @param {{ title?:string, text:string, icon?:string }} opts */
   toast: (opts) => call("sys.notify.toast", opts),
   capabilities: () => call("sys.notify.capabilities"),
 };
@@ -399,18 +323,14 @@ export const shell = {
   openURL: (url) => call("sys.shell.openURL", { url }),
   openPath: (path) => call("sys.shell.openPath", { path }),
   showInFolder: (path) => call("sys.shell.showInFolder", { path }),
-  /** @param {{cwd?:string, env?:Record<string,string>, timeoutMs?:number}} [opts] */
   exec: (command, opts = {}) => call("sys.shell.exec", { command, ...opts }),
-  /** @param {{cwd?:string, env?:Record<string,string>, timeoutMs?:number}} [opts] */
   run: (command, opts = {}) => call("sys.shell.run", { command, ...opts }),
-  /** @param {{cwd?:string, env?:Record<string,string>}} [opts] */
   start: (command, opts = {}) => call("sys.shell.start", { command, ...opts }),
 };
 
 export const win = {
   info: () => call("sys.window.info"),
   setTitle: (title) => call("sys.window.setTitle", { title }),
-  /** @param {"none"|"min"|"max"|"fixed"} [hint] */
   setSize: (width, height, hint = "none") =>
     call("sys.window.setSize", { width, height, hint }),
   getSize: () => call("sys.window.getSize"),
@@ -431,9 +351,7 @@ export const win = {
 };
 
 export const fs = {
-  /** @param {"utf8"|"base64"} [encoding] */
   read: (path, encoding = "utf8") => call("sys.fs.read", { path, encoding }),
-  /** @param {"utf8"|"base64"} [encoding] */
   write: (path, data, encoding = "utf8") =>
     call("sys.fs.write", { path, data, encoding }),
   list: (path) => call("sys.fs.list", { path }),
@@ -444,16 +362,9 @@ export const fs = {
   rename: (from, to) => call("sys.fs.rename", { from, to }),
 };
 
-/** Clipboard via DOM (no backend round-trip needed — webview is a secure context). */
 export const clipboard = {
   writeText: (text) => navigator.clipboard.writeText(text),
   readText: () => navigator.clipboard.readText(),
-  /**
-   * Returns a `{ onKeyDown, onPaste }` handler pair for password/secret inputs.
-   * Uses native OS clipboard on Cmd/Ctrl+V (reliable in webviews where
-   * navigator.clipboard.readText() may be blocked), with onPaste as primary path.
-   * @param {(text: string) => void} onChange
-   */
   pasteHandler: (onChange) => ({
     onPaste: (e) => {
       const text = e.clipboardData?.getData("text");
@@ -478,7 +389,6 @@ export const clipboard = {
     writeText: (text) => call("sys.clipboard.writeText", { text }),
     clear: () => call("sys.clipboard.clear"),
     formats: () => call("sys.clipboard.formats"),
-    /** Check native clipboard availability — always true on macOS/Windows/Linux (native NSPasteboard/user32/GtkClipboard, no external tool dependency). */
     isAvailable: () => call("sys.clipboard.isAvailable"),
   },
 };
@@ -571,7 +481,15 @@ export const protocol = {
 };
 
 export const updater = {
+  getState: () => call("sys.updater.getState"),
   check: (opts = {}) => call("sys.updater.check", opts),
+  download: () => call("sys.updater.download"),
+  install: () => call("sys.updater.install"),
+  confirm: () => call("sys.updater.confirm"),
+  getLastResult: () => call("sys.updater.getLastResult"),
+  setSettings: (settings) => call("sys.updater.setSettings", settings),
+  onState: (handler) => on("updater.state", handler),
+  onProgress: (handler) => on("updater.progress", handler),
 };
 
 export const secureStorage = {
@@ -588,13 +506,7 @@ export const recentDocs = {
   list: () => call("sys.recentDocs.list"),
 };
 
-/**
- * Native OS trash/recycle bin. `empty()` permanently deletes its current
- * contents (no undo) — the backend itself asks for native confirmation
- * before running it unless the app has installed its own SecurityPolicy/hook.
- */
 export const trash = {
-  /** @returns {Promise<{ ok: boolean, platform: string, removed?: number }>} */
   empty: () => call("sys.trash.empty"),
 };
 
@@ -652,6 +564,7 @@ const privilegedApiIds = new Set([
   "sys.clipboard.writeText",
   "sys.clipboard.clear",
   "sys.trash.empty",
+  "sys.updater.install",
 ]);
 
 const userMediatedApiIds = new Set([
@@ -672,8 +585,6 @@ export function apiRiskLevel(id) {
   if (userMediatedApiIds.has(id)) return "user";
   return "safe";
 }
-
-// ── API catalog (for dashboard/docs) ─────────────────────────────────────────
 
 export const apiCatalog = [
   {
@@ -818,7 +729,13 @@ export const apiCatalog = [
       { id: "sys.shortcuts.clear", sig: "shortcuts.clear()", desc: "Clear runtime keyboard shortcuts." },
       { id: "sys.shortcuts.list", sig: "shortcuts.list()", desc: "List runtime keyboard shortcuts." },
       { id: "sys.protocol.status", sig: "protocol.status(scheme)", desc: "Inspect OS protocol/deep-link registration for a scheme." },
-      { id: "sys.updater.check", sig: "updater.check(opts?)", desc: "Check a JSON update provider." },
+      { id: "sys.updater.getState", sig: "updater.getState()", desc: "Current updater state, settings and available update." },
+      { id: "sys.updater.check", sig: "updater.check(opts?)", desc: "Check the configured update source (GitHub releases or JSON feed)." },
+      { id: "sys.updater.download", sig: "updater.download()", desc: "Download and verify the available update." },
+      { id: "sys.updater.install", sig: "updater.install()", desc: "Install the downloaded update and restart; rolls back automatically on failure." },
+      { id: "sys.updater.confirm", sig: "updater.confirm()", desc: "Confirm the new build is healthy (called automatically by the bridge)." },
+      { id: "sys.updater.getLastResult", sig: "updater.getLastResult()", desc: "Outcome of the last update attempt, surfaced once." },
+      { id: "sys.updater.setSettings", sig: "updater.setSettings(settings)", desc: "Set automatic check, automatic download and pre-release options." },
       { id: "sys.secureStorage.isAvailable", sig: "secureStorage.isAvailable()", desc: "Detect OS secure storage backend availability." },
       { id: "sys.fileAssociations.status", sig: "fileAssociations.status(ext)", desc: "Inspect OS file association for an extension." },
       { id: "sys.recentDocs.add", sig: "recentDocs.add(path)", desc: "Persist a recent document path." },
